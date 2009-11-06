@@ -86,7 +86,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 our $FEDORA_VERSION = "3.2";
 

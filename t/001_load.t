@@ -163,12 +163,12 @@ if ($dcount <= 0) {
 
 # Get object profile
 my $info;
-$status = $apia->getObjectProfile (pid => $pid, 
-				   profile_ref => \$info,
-				   );
-$error = $apim->error() || "";
+$status = $object->getObjectProfile (pid => $pid, 
+				     profile_ref => \$info,
+				     );
+$error = $object->error() || "";
 #8 
-ok ($result == 0, "getObjectProfile() FAILED: $erro");
+ok ($result == 0, "getObjectProfile() FAILED: $error");
 
 #6 # Get a datastream
 my $stream;
