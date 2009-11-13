@@ -86,7 +86,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.2';
+our $VERSION = '0.2.1';
 
 our $FEDORA_VERSION = "3.2";
 
@@ -797,7 +797,7 @@ parameters to the wrapping method.
 Fedora documentation: L<http://fedora-commons.org/confluence/display/FCR30/Fedora+Repository+3.2.1+Documentation>.
 
 Fedora API-A documentation:
-L<http://www.fedora.info/definitions/1/0/api/Fedora-API-A.html>.
+L<http://www.fedora-commons.org/confluence/display/FCR30/API-A>.
 
 APIA Method summary descriptions are taken directly from the APIA documentation.
 
