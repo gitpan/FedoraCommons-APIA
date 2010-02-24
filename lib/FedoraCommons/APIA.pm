@@ -45,6 +45,12 @@
 #          o getDissemination                 No
 #          o listMethods                      No
 #
+# Local Additions:
+#
+#   * Datastream Access
+#          o datastreamExists              Supported      OK         Yes
+#
+#
 # *PSU - Implemented by Penn State University
 #
 # ========================================================================= # 
@@ -86,7 +92,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.2.1';
+our $VERSION = '0.4';
 
 our $FEDORA_VERSION = "3.2";
 
@@ -396,6 +402,8 @@ sub getDatastreamDissemination {
 #   pid:              Record PID in fedora
 #   asOfDateTime:
 #   datastream_ref:   Reference to scalar to hold result
+#   list:             Reference to list. When provides will create list of
+#                     datastream ids.
 #
 # Return:
 #
@@ -446,12 +454,65 @@ sub listDatastreams{
     return 2;
   }
 
+  # Does the user want a list of datastream identifiers.
+  if ($args{list}) {
+
+    my $datastreams;
+    $datastreams = $lds_result;
+
+    foreach my $ds ($datastreams->valueof('//datastreamDef')) {
+      push(@{$args{list}},$ds->{ID});
+    }
+  }
+
   # Handle success
-#  ${$args{datastream_ref}} = $lds_result->result();
   ${$args{datastream_ref}} = $lds_result;
   return 0;
 
 }
+
+# datastreamExists (Boolean)
+#
+# Args in parameter hash:
+#   pid:              Record PID in fedora
+#   dsID:             Datastream identifier. Will check 
+#                     existence of datastream.
+#
+# Return:
+#
+#   0 = False, datastream does not exist
+#   1 = True, datastream exists
+#
+sub datastreamExists {
+  my $self = shift;
+  my %args = @_;
+
+  Carp::croak "Parameter 'pid' missing" unless defined($args{pid});
+  Carp::croak "Parameter 'dsID' missing" unless defined($args{dsID});
+
+
+
+  my $pid  = $args{'pid'};
+  my $dsID = $args{'dsID'};
+  my $datastreams;
+
+  if ($self->listDatastreams(pid=>$pid, 
+			     datastream_ref =>\$datastreams) == 0) {
+    my @dslist = ();
+
+    foreach my $ds ($datastreams->valueof('//datastreamDef')) {
+      push(@dslist,$ds->{ID});
+    }
+    if (grep $dsID eq $_, @dslist) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+  return 0;
+}
+
+
 
 # getObjectProfile
 #
@@ -588,11 +649,22 @@ FedoraCommons::APIA - Interface for interaction with Fedora's Access API
               pid=>$pid, 
               datastream_ref =>\$datastreams);
 
-  Return Status:
+  $status = $apia->listDatastreams(
+              pid=>$pid, 
+              datastream_ref =>\$datastreams,
+              list => \@dsList);
+
+  Return Status for above methods:
 
    0 = success
    1 = Error
    2 = Error on remote server
+
+   $bool   = $apia->datastreamExists(
+               pid => $pid,
+               dsID => $dsID);
+
+   datastreamExists returns 1 (True) or 0 (False).
 
 
 =head1 DESCRIPTION
@@ -708,7 +780,7 @@ B<Note:> Empty (or null'ed) dsID are currently not supported.
 
 =item listDatastreams()
 
-Lists all of the datastreams in the digital Fedora object and returns the list of datastreams. Called as 
+Lists all of the datastreams in the digital Fedora object and returns the list of datastreams and associated values in a hash. Called as 
 
     my $datastreams;
     $apia->listDatastreams(
@@ -718,6 +790,48 @@ Lists all of the datastreams in the digital Fedora object and returns the list o
                                          #   into which resulting 
                                          #   datastreams is put
     );
+
+Used as: [available fields: ID, label, MIMEType]
+
+  if ($apia->listDatastreams(pid=>$pid, 
+			     datastream_ref =>\$datastreams) == 0) {
+    foreach my $ds ($datastreams->valueof('//datastreamDef')) {
+      print "dsID: $ds->{ID} LABEL: $ds->{label} MIME: $ds->{MIMEType}\n";
+    }
+  }
+
+New list feature added to simplify the common tasks of creating a list of
+datastream names. Add a reference to a @list as argument list and the 
+method will populate this with the list of the names.
+
+    my $datastreams;
+    my @dsList = ();
+    $apia->listDatastreams(
+      pid => $pid,                       # Required. Scalar holding
+                                         #   PID of object 
+      datastream_ref => \$datastreams,   # Required. Reference to scalar 
+                                         #   into which resulting 
+                                         #   datastreams data is returned.
+      list => \@dsList,                  # Optional: return list of 
+    );                                   #   datastreams.
+
+
+
+=item datastreamExists()
+
+Returns 1 (True) if datastream id exists in specified object. Otherwise
+returns false which indicates either datastream doesn't exist or there
+was an error. Check $apia->error() to determine if an error occurred.
+
+This method is not part of the APIA specification.
+
+    $apia->datastreamExists(
+      pid => $pid,                       # Required. Scalar holding
+                                         #   PID of object
+      dsID => $dsID                      # Required. Datastream name 
+                                         # (Examples: DC, RELS-EXT) 
+    );
+
 
 =back
 
@@ -804,7 +918,7 @@ APIA Method summary descriptions are taken directly from the APIA documentation.
 =head1 AUTHOR
 
 The Fedora::APIA module is based on a module written by Christian 
-Tønsberg, E<lt>ct@dtv.dkE<gt> in 2006. Christian no longer supports
+Tønsberg, E<lt>ct at dtv dot dkE<gt> in 2006. Christian no longer supports
 or distributes the module he developed.
 
 Maryam Kutchemeshgi (Penn State University) put together the initial
@@ -813,9 +927,10 @@ in a collaboration between Cornell University and Penn State University
 as part of a project to develop an interface to support the use of the 
 Fedora Repository as the underlying repository for DPubS [Digital 
 Publishing System] L<http://dpubs.org>. Maryam Kutchemeshgi 
-E<lt>mxk128@psu.eduE<gt> is no longer involved with maintaining this module.
+E<lt>mxk128 at psu dot eduE<gt> is no longer involved with maintaining 
+this module.
 
-David L. Fielding (E<lt>dlf2@cornell.edu<gt>) is responsible for recent
+David L. Fielding (E<lt>dlf2 at cornell dot edu<gt>) is responsible for recent
 enhancements along with packaging up the module and placing it on CPAN. 
 To avoid confusion between Fedora (the Linux operating system) and
 Fedora (the repository) I changed the name of the module package from

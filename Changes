@@ -1,5 +1,14 @@
 Revision history for Perl module FedoraCommons::APIA
 
+0.4   Wed Feb 24 12:59:34 EST 2010
+      - added datastreamExists method to determine if datastream exists
+      - added list argument to listDatastreams which will return a list
+        of datastream identifiers when provided (optional).
+      - updated documentation.
+
+0.3   Tue Feb 23 09:22:30 EST 2010
+      - Fixed problem with tests.
+
 0.2.1 Fri Nov 13 11:45:10 EST 2009
       - Skip tests when Fedora server environment variables are not set.
 	Allows successful install using CPAN.
