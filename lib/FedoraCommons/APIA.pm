@@ -4,6 +4,8 @@
 #
 # ========================================================================= # 
 #
+#  Copyright (c) 2011, Cornell University www.cornell.edu (enhancements)
+#  Copyright (c) 2010, Cornell University www.cornell.edu (enhancements)
 #  Copyright (c) 2007, The Pennsylvania State University, www.psu.edu
 #
 #  This library is free software; you can redistribute it and/or modify
@@ -92,7 +94,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.4';
+our $VERSION = '0.5';
 
 our $FEDORA_VERSION = "3.2";
 
@@ -144,6 +146,8 @@ sub new {
   my $class = shift;
   my %args = @_;
   my $self = {};
+  $self->{'protocol'} = "http";
+
   foreach my $k (keys %args) {
     if ($k eq 'usr') {
       $self->{$k} = $args{$k}; 
@@ -155,7 +159,9 @@ sub new {
       $self->{$k} = $args{$k}; 
     } elsif ( $k eq 'timeout') {
       $self->{$k} = $args{$k}; 
-    } 
+    } elsif ( $k eq 'protocol') {
+      $self->{$k} = $args{$k};
+    }
   }
 
   # Check mandatory parameters
@@ -169,7 +175,7 @@ sub new {
   
   # Initialise SOAP class
   my $apia=SOAP::Lite
-      -> uri('http://www.fedora.info/definitions/api/')
+      -> uri("http://www.fedora.info/definitions/api/")
       -> proxy($self->_get_proxy());
   if (defined($self->{timeout})) {
     $apia->proxy->timeout($self->{timeout});
@@ -195,6 +201,11 @@ sub get_time {
 sub get_stat {
   my $self = shift;
   return $self->{STAT};
+}
+
+sub get_proxy {
+  my $self = shift;
+  return $self->_get_proxy();
 }
 
 # Start statistic gathering over
@@ -594,7 +605,7 @@ sub _handle_exceptions {
 # Method for constructing proxy URL
 sub _get_proxy {
   my ($self) = @_;
-  return "http://".
+  return "$self->{'protocol'}://".
            $self->{usr}.":".$self->{pwd}.
            "\@".$self->{host}.":".$self->{port}.
            "/fedora/services/access";
@@ -709,6 +720,7 @@ L<http://www.fedora-commons.org/confluence/display/FCR30/API-A>.
 Constructor.  Called as 
 
     my $apia = new FedoraCommons::APIA (
+      protocol => "https",        # Optional: enables SSL
       host    => "hostname",      # Required. Host name of 
                                   #   fedora installation
       port    => "8080",          # Required. Port number of 
